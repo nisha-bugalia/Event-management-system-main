@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Ticket, User, X, Download } from 'lucide-react';
+import { Calendar, MapPin, Ticket, X, Download } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function CustomerDashboard() {
     const { user } = useAuth();
@@ -12,6 +14,7 @@ export default function CustomerDashboard() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('Upcoming Tickets');
     const [selectedTicket, setSelectedTicket] = useState(null);
+    const ticketRef = useRef(null);
 
     const [availableEvents, setAvailableEvents] = useState([]);
 
@@ -84,9 +87,60 @@ export default function CustomerDashboard() {
     };
 
 
-    const handleDownloadTicket = () => {
-        window.print();
-    };
+    const handleDownloadTicket = async () => {
+    try {
+        if (!ticketRef.current || !selectedTicket) return;
+
+        const canvas = await html2canvas(ticketRef.current, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+
+        const imgProps = pdf.getImageProperties(imgData);
+
+        const pdfHeight =
+            (imgProps.height * (pdfWidth - 20)) / imgProps.width;
+
+        // Branding
+        pdf.setFontSize(20);
+        pdf.setTextColor(244, 63, 94);
+        pdf.text('EventOne Ticket', 15, 15);
+
+        // Ticket image
+        const finalHeight = pdfHeight > 250 ? 250 : pdfHeight;
+
+        pdf.addImage(
+            imgData,
+            'PNG',
+            10,
+            25,
+            pdfWidth - 20,
+            finalHeight
+        );
+
+        const safeEventName = selectedTicket.event?.title
+            ?.replace(/\s+/g, '-')
+            ?.replace(/[^a-zA-Z0-9-_]/g, '')
+            ?.toUpperCase();
+
+        const fileName = `ticket-${safeEventName || 'EVENT'}-${selectedTicket._id.slice(-6).toUpperCase()}.pdf`;
+
+        pdf.save(fileName);
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+    }
+};
 
     // Filter registrations based on date
     const upcomingEvents = registrations.filter(reg => reg.event && new Date(reg.event.date) >= new Date());
@@ -461,9 +515,11 @@ export default function CustomerDashboard() {
                                 <X className="w-5 h-5" />
                             </button>
 
-                            <div className="p-6">
+                            <div ref={ticketRef} className="p-6 bg-white">
                                 <div className="text-center mb-6">
-                                    <h3 className="text-xl font-bold mb-1">Event Ticket</h3>
+                                    <h3 className="text-xl font-bold mb-1 text-rose-600">
+                                        EventOne Ticket
+                                    </h3>
                                     <p className="text-xs text-zinc-500 uppercase tracking-widest">Admit One</p>
                                 </div>
 
