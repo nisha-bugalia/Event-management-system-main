@@ -14,6 +14,9 @@ router.post(
   signupValidation,
   validate,
   signup
+const parsedAuthWindowMs = Number.parseInt(
+  process.env.AUTH_RATE_LIMIT_WINDOW_MS ?? '',
+  10
 );
 
 router.post(
@@ -22,6 +25,9 @@ router.post(
   validate,
   login
 );
+router.post('/signup', authRateLimiter, signup);
+router.post('/login', authRateLimiter, login);
+
 router.get('/me', authenticate, me);
 router.put('/profile', authenticate, updateProfile);
 
