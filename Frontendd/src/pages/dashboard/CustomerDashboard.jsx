@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Ticket } from 'lucide-react';
+import { Calendar, MapPin, Ticket, X, Download } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/AuthContext';
 import toast from "react-hot-toast";
@@ -23,20 +24,23 @@ export default function CustomerDashboard() {
     const ticketRef = useRef(null);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const mountedRef = useRef(true);
+    const socketRef = useRef(null);
+    const joinedEventIdsRef = useRef([]);
+    const highlightTimeoutsRef = useRef({});
 
     const [availableEvents, setAvailableEvents] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRegistrationId, setSelectedRegistrationId] = useState(null);
+    const [highlightedEvents, setHighlightedEvents] = useState({});
 
     useEffect(() => {
-        if (activeTab === 'Browse Events') {
-            fetchAvailableEvents();
-        } else {
-            fetchRegistrations();
-        }
-    }, [activeTab, searchParams]);
+      return () => {
+        mountedRef.current = false;
+      };
+    }, []);
 
-    const fetchAvailableEvents = async () => {
+    const fetchAvailableEvents = useCallback(async () => {
         const tags = searchParams.get('tags');
         try {
             setLoading(true);
@@ -46,7 +50,7 @@ export default function CustomerDashboard() {
                 url += `&tags=${tags}`;
             }
 
-    const res = await fetch(url);
+            const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
                 // Filter events that are in the future
@@ -58,8 +62,113 @@ export default function CustomerDashboard() {
         } finally {
             setLoading(false);
         }
-    };
-    };
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (activeTab !== 'Browse Events' || availableEvents.length === 0) {
+            return undefined;
+        }
+
+        const socket = io(API_BASE_URL, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+        });
+
+        socketRef.current = socket;
+
+        const eventIds = availableEvents
+            .map((evt) => evt?._id)
+            .filter(Boolean);
+
+        joinedEventIdsRef.current = eventIds;
+
+        const pulseEvent = (eventId) => {
+            setHighlightedEvents((prev) => ({
+                ...prev,
+                [eventId]: true,
+            }));
+
+            if (highlightTimeoutsRef.current[eventId]) {
+                clearTimeout(highlightTimeoutsRef.current[eventId]);
+            }
+
+            highlightTimeoutsRef.current[eventId] = window.setTimeout(() => {
+                setHighlightedEvents((prev) => {
+                    const next = { ...prev };
+                    delete next[eventId];
+                    return next;
+                });
+                delete highlightTimeoutsRef.current[eventId];
+            }, 1800);
+        };
+
+        const joinRooms = () => {
+            eventIds.forEach((eventId) => {
+                socket.emit('event:join', { eventId });
+            });
+        };
+
+        const handleRegistrationCount = ({ eventId, count } = {}) => {
+            if (!eventId || typeof count !== 'number') {
+                return;
+            }
+
+            setAvailableEvents((prev) => {
+                let changed = false;
+
+                const next = prev.map((evt) => {
+                    if (evt._id !== eventId) {
+                        return evt;
+                    }
+
+                    if (evt.registeredCount === count) {
+                        return evt;
+                    }
+
+                    changed = true;
+
+                    return {
+                        ...evt,
+                        registeredCount: count,
+                    };
+                });
+
+                if (changed) {
+                    pulseEvent(eventId);
+                }
+
+                return next;
+            });
+        };
+
+        socket.on('connect', joinRooms);
+        socket.on('registration:count', handleRegistrationCount);
+        socket.on('connect_error', () => {});
+
+        if (socket.connected) {
+            joinRooms();
+        }
+
+        return () => {
+            const joinedEventIds = joinedEventIdsRef.current;
+
+            joinedEventIds.forEach((eventId) => {
+                socket.emit('event:leave', { eventId });
+            });
+
+            socket.off('connect', joinRooms);
+            socket.off('registration:count', handleRegistrationCount);
+            socket.off('connect_error');
+            socket.disconnect();
+            socketRef.current = null;
+            joinedEventIdsRef.current = [];
+
+            Object.values(highlightTimeoutsRef.current).forEach((timeoutId) => {
+                clearTimeout(timeoutId);
+            });
+            highlightTimeoutsRef.current = {};
+        };
+    }, [activeTab, availableEvents.map((evt) => evt?._id).filter(Boolean).join(',')]);
 
 
   const fetchRegistrations = useCallback(async () => {
@@ -266,23 +375,33 @@ export default function CustomerDashboard() {
                                 ) : (
                                     <div className="grid grid-cols-1 gap-6">
                                         {availableEvents.map((evt, idx) => {
-                                           const isRegistered = registrations.some(
-    (r) =>
-        r.status === "registered" &&
-        r.event?._id === evt._id
-);
-
-const isEventFullBooked =
-    evt.registeredCount >= evt.capacity;
-
-return (
+                                            const isRegistered = registrations.some(r => r.event?._id === evt._id);
+                                            const registeredCount = evt.registeredCount ?? 0;
+                                            const isHighlighted = !!highlightedEvents[evt._id];
+                                            const isEventFullBooked = evt.registeredCount === evt.capacity;
+                                            return (
                                                 <motion.div
                                                     key={evt._id}
                                                     layout
                                                     initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        y: 0,
+                                                        scale: isHighlighted ? [1, 1.01, 1] : 1,
+                                                        boxShadow: isHighlighted
+                                                            ? [
+                                                                '0 0 0 rgba(34, 197, 94, 0)',
+                                                                '0 0 0 1px rgba(34, 197, 94, 0.35), 0 0 28px rgba(34, 197, 94, 0.12)',
+                                                                '0 0 0 rgba(34, 197, 94, 0)',
+                                                            ]
+                                                            : '0 0 0 rgba(34, 197, 94, 0)',
+                                                    }}
                                                     transition={{ delay: idx * 0.05 }}
-                                                    className="group relative bg-card border border-border rounded-2xl p-4 hover:border-rose-500/50 transition-colors shadow-sm"
+                                                    className={`group relative bg-card border rounded-2xl p-4 transition-colors shadow-sm ${
+                                                        isHighlighted
+                                                            ? 'border-green-500/50'
+                                                            : 'border-border hover:border-rose-500/50'
+                                                    }`}
                                                 >
                                                     <div className="flex flex-col md:flex-row gap-6">
                                                         <div className="w-full md:w-56 h-36 rounded-xl overflow-hidden shrink-0 bg-muted relative">
@@ -309,8 +428,16 @@ return (
                                                                     <h3 className="text-lg font-semibold text-foreground group-hover:text-rose-500 transition-colors">
                                                                         {evt.title}
                                                                     </h3>
-                                                                    <span className="inline-flex items-center text-xs px-2 py-1 rounded-full border bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                                                        {evt.capacity ? `${evt.capacity} Spots` : 'Open'}
+                                                                    <span className={`inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full border transition-colors ${
+                                                                        isHighlighted
+                                                                            ? 'bg-green-500/10 text-green-600 border-green-500/30'
+                                                                            : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                                                    }`}>
+                                                                        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                                                        <span>
+                                                                            {registeredCount} registered
+                                                                            {evt.capacity ? ` / ${evt.capacity}` : ''}
+                                                                        </span>
                                                                     </span>
                                                                 </div>
                                                                 <p className="text-muted-foreground text-sm mt-2 line-clamp-2 max-w-2xl">
@@ -354,17 +481,6 @@ return (
                                     </div>
                                 )}
                             </div>
-
-                            <div className="flex justify-end pt-4 md:pt-0">
-                              {isRegistered ? (<Button disabled variant="success" className="text-xs h-8 bg-green-600 text-white opacity-75">Registered</Button>) : isFull ? (<Button disabled variant="secondary" className="text-xs h-8">Fully Booked</Button>) : (<Button className="text-xs h-8 bg-rose-600 hover:bg-rose-700 text-white" onClick={() => handleRegister(evt._id)}>Register Now</Button>)}
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             )}
           </AnimatePresence>
 
