@@ -41,12 +41,33 @@ Thanks to all the amazing people who have contributed to **eventmgr**! 🎉
 <br/>
 
 <div align="center">
-  <a href="https://github.com/anubhavxdev/Event-management-system-main/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=anubhavxdev/Event-management-system-main" alt="Contributors" />
-  </a>
-</div>
 
-<br/>
+  <a href="https://github.com/vaishnavijha12">
+    <img src="https://github.com/vaishnavijha12.png" width="80px;" style="border-radius: 50%;" alt="vaishnavijha12"/>
+  </a>
+  <a href="https://github.com/anubhavxdev">
+    <img src="https://github.com/anubhavxdev.png" width="80px;" style="border-radius: 50%;" alt="anubhavxdev"/>
+  </a>
+  <a href="https://github.com/SatyamPrakash09">
+    <img src="https://github.com/SatyamPrakash09.png" width="80px;" style="border-radius: 50%;" alt="SatyamPrakash09"/>
+  </a>
+  <a href="https://github.com/udaycodespace">
+    <img src="https://github.com/udaycodespace.png" width="80px;" style="border-radius: 50%;" alt="udaycodespace"/>
+  </a>
+  <a href="https://github.com/jasmeetc27">
+    <img src="https://github.com/jasmeetc27.png" width="80px;" style="border-radius: 50%;" alt="jasmeetc27"/>
+  </a>
+  <a href="https://github.com/Samcode-16">
+    <img src="https://github.com/Samcode-16.png" width="80px;" style="border-radius: 50%;" alt="Samcode-16"/>
+  </a>
+  <a href="https://github.com/Shruti20156">
+    <img src="https://github.com/Shruti20156.png" width="80px;" style="border-radius: 50%;" alt="Shruti20156"/>
+  </a>
+  <a href="https://github.com/Abdelhafiz7">
+    <img src="https://github.com/Abdelhafiz7.png" width="80px;" style="border-radius: 50%;" alt="Abdelhafiz7"/>
+  </a>
+
+</div>
 
 ---
 
