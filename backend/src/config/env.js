@@ -29,6 +29,10 @@ export const env = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
+  // EMAIL_FROM can be overridden in .env; default includes the app name for clarity
+  emailFrom: (process.env.EMAIL_FROM || `${process.env.APP_NAME || 'eventone'} <no-reply@eventone.local>`).toString(),
+  // Sanitize APP_NAME; fallback to 'eventone' if empty or missing
+  appName: process.env.APP_NAME?.toString().trim() || 'eventone',
 };
 
 export default env;
