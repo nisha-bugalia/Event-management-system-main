@@ -1,3 +1,8 @@
+import Event from '../models/Event.js';
+import Registration from '../models/Registration.js';
+import { generateQRCodeDataUrl } from '../utils/qrcode.js';
+import { sendEmail } from '../utils/email.js';
+
 export const registerForEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
