@@ -41,12 +41,33 @@ Thanks to all the amazing people who have contributed to **eventmgr**! 🎉
 <br/>
 
 <div align="center">
-  <a href="https://github.com/anubhavxdev/Event-management-system-main/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=anubhavxdev/Event-management-system-main" alt="Contributors" />
-  </a>
-</div>
 
-<br/>
+  <a href="https://github.com/vaishnavijha12">
+    <img src="https://github.com/vaishnavijha12.png" width="80px;" style="border-radius: 50%;" alt="vaishnavijha12"/>
+  </a>
+  <a href="https://github.com/anubhavxdev">
+    <img src="https://github.com/anubhavxdev.png" width="80px;" style="border-radius: 50%;" alt="anubhavxdev"/>
+  </a>
+  <a href="https://github.com/SatyamPrakash09">
+    <img src="https://github.com/SatyamPrakash09.png" width="80px;" style="border-radius: 50%;" alt="SatyamPrakash09"/>
+  </a>
+  <a href="https://github.com/udaycodespace">
+    <img src="https://github.com/udaycodespace.png" width="80px;" style="border-radius: 50%;" alt="udaycodespace"/>
+  </a>
+  <a href="https://github.com/jasmeetc27">
+    <img src="https://github.com/jasmeetc27.png" width="80px;" style="border-radius: 50%;" alt="jasmeetc27"/>
+  </a>
+  <a href="https://github.com/Samcode-16">
+    <img src="https://github.com/Samcode-16.png" width="80px;" style="border-radius: 50%;" alt="Samcode-16"/>
+  </a>
+  <a href="https://github.com/Shruti20156">
+    <img src="https://github.com/Shruti20156.png" width="80px;" style="border-radius: 50%;" alt="Shruti20156"/>
+  </a>
+  <a href="https://github.com/Abdelhafiz7">
+    <img src="https://github.com/Abdelhafiz7.png" width="80px;" style="border-radius: 50%;" alt="Abdelhafiz7"/>
+  </a>
+
+</div>
 
 ---
 
@@ -272,6 +293,46 @@ const { checkIn, status } = useQrCheckIn(eventId);
 # Example: run backend with PM2
 pm2 start src/index.js --name eventmanager-api
 ```
+
+<br/>
+
+## ✨ Contributors
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/anubhavxdev"><img src="https://avatars.githubusercontent.com/u/1234567?v=4?s=100" width="100px;" alt="Anubhav"/><br /><sub><b>Anubhav</b></sub></a><br /><a href="https://github.com/anubhavxdev/Event-management-system-main/commits?author=anubhavxdev" title="Code">💻</a> <a href="https://github.com/anubhavxdev/Event-management-system-main/commits?author=anubhavxdev" title="Documentation">📖</a> <a href="#infra-anubhavxdev" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+### Adding a Contributor
+
+To add a new contributor, you can use the npm scripts configured in the project:
+
+1. **Add a contributor:**
+   ```bash
+   npm run contributors:add <username> <contributions>
+   ```
+   *Example:* `npm run contributors:add octocat code,doc,bug`
+
+2. **Generate the updated README:**
+   ```bash
+   npm run contributors:generate
+   ```
+   The `README.md` will be updated automatically with the new avatar and badges!
 
 <br/>
 
