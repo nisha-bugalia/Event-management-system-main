@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { LegalModal } from "../ui/legal-modal";
 import { legalContent } from "../../data/legalContent";
 import { Button } from "../ui/button";
@@ -22,7 +23,10 @@ const data = () => ({
     ],
 
     company: [
-      { name: "About", href: "/about" },
+      { name: "About", href: "/about-us" },
+      // { name: "Blog", href: "/blog" },
+
+      // { name: "Careers", href: "/careers" },
       { name: "Contact", href: "/contact" },
     ],
 
@@ -205,50 +209,30 @@ export default function FooterStandard() {
 
           {/* Navigation */}
           <div className="grid w-full grid-cols-2 items-start justify-between gap-8 px-5 lg:col-span-3">
-
-            {["product", "company", "resources", "legal"].map(
-              (section) => (
-
-                <div key={section} className="w-full">
-
-                  <h3 className="border-primary mb-4 -ml-5 border-l-2 pl-5 text-sm font-semibold tracking-wider uppercase">
-
-                    {section.charAt(0).toUpperCase() + section.slice(1)}
-
-                  </h3>
-
-                  <ul className="space-y-3">
-
-                    {data().navigation[section].map((item) => (
-
-                      <li key={item.name}>
-
-                        <a
-                          href={item.href}
-                          onClick={(e) => {
-                            if (section === "legal") {
-                              handleLegalClick(e, item.href);
-                            }
-                          }}
-                          className="group text-muted-foreground hover:text-foreground decoration-primary -ml-5 inline-flex items-center gap-2 underline-offset-8 transition-all duration-500 hover:pl-5 hover:underline cursor-pointer"
-                        >
-
-                          <ArrowDownLeft className="text-primary rotate-[225deg] opacity-30 transition-all duration-500 group-hover:scale-150 group-hover:opacity-100 sm:group-hover:rotate-[225deg] md:rotate-0" />
-
-                          {item.name}
-
-                        </a>
-
-                      </li>
-
-                    ))}
-
-                  </ul>
-
-                </div>
-              )
-            )}
-
+            {["product", "company", "resources", "legal"].map((section) => (
+              <div key={section} className="w-full">
+                <h3 className="border-primary mb-4 -ml-5 border-l-2 pl-5 text-sm font-semibold tracking-wider uppercase">
+                  {section.charAt(0).toUpperCase() + section.slice(1)}
+                </h3>
+                <ul className="space-y-3">
+                  {data().navigation[section].map((item) => (
+                    <li key={item.name}>
+                     <Link
+                        to={item.href}
+                        onClick={(e) => {
+                         if (section === 'legal') {
+                         handleLegalClick(e, item.href);
+                       }
+                       }}
+                        className="group text-muted-foreground hover:text-foreground decoration-primary -ml-5 inline-flex items-center gap-2 underline-offset-8 transition-all duration-500 hover:pl-5 hover:underline pointer-events-auto cursor-pointer">
+                       <ArrowDownLeft className="text-primary rotate-[225deg] opacity-30 transition-all duration-500 group-hover:scale-150 group-hover:opacity-100 sm:group-hover:rotate-[225deg] md:rotate-0" />
+                       {item.name}
+                    </Link>
+                  </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
         </div>
