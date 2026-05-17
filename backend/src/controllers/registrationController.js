@@ -96,6 +96,24 @@ export const checkInParticipant = async (req, res) => {
     );
 
     if (!reg) return res.status(404).json({ message: 'Registration not found for this user/event' });
+    // Socket.IO real-time emission (feat/17)
+    try {
+      await reg.populate('user', 'name');
+      const { emitCheckinSuccess } = await import('../services/socket.js');
+      const payload = {
+        registrationId: reg._id,
+        user: reg.user,
+        checkedInAt: reg.checkedInAt || new Date(),
+        event: reg.event
+      };
+      // emit to registration-specific channel
+      emitCheckinSuccess(reg._id.toString(), payload);
+      // also emit to event room for live participant lists
+      emitCheckinSuccess(req.params.id, { registrationId: reg._id, user: reg.user, checkedInAt: reg.checkedInAt || new Date() });
+    } catch (emitErr) {
+      console.warn('[SOCKET] emitCheckinSuccess failed', emitErr);
+    }
+
     res.json({ registration: reg });
   } catch (err) {
     console.error(`[ERROR] Check-in failed for event ${req.params.id}:`, err.message);
