@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, easeInOut } from "framer-motion";
 import { Menu, X, ArrowRight, Zap, Search, User, LogOut, LayoutDashboard, Settings, ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -263,14 +263,14 @@ export default function Header2() {
         {isMobileMenuOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-black/25 backdrop-blur-sm lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
             />
             <motion.div
-              className="border-border bg-background fixed top-16 right-4 z-50 w-80 overflow-hidden rounded-2xl border shadow-2xl lg:hidden"
+              className="fixed top-16 right-4 z-50 w-[88%] max-w-sm overflow-hidden rounded-3xl border border-white/20 bg-white/70 backdrop-blur-2xl shadow-[0_8px_32px_rgba(15,23,42,0.18)] supports-[backdrop-filter]:bg-white/55 lg:hidden"
               variants={mobileMenuVariants}
               initial="closed"
               animate="open"
@@ -281,7 +281,7 @@ export default function Header2() {
                     <motion.div key={item.name} variants={mobileItemVariants}>
                       <Link
                         to={item.href}
-                        className="text-foreground hover:bg-muted block rounded-lg px-4 py-3 font-medium transition-colors duration-200"
+                        className="text-foreground/90 hover:bg-white/40 hover:text-foreground block rounded-xl px-4 py-3 font-medium transition-all duration-200 active:scale-[0.98]"
                         onClick={() => setIsMobileMenuOpen(false)}>
                         {item.name}
                       </Link>
