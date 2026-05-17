@@ -10,6 +10,20 @@ import {
 const router = Router();
 
 
+router.post(
+  '/signup',
+  signupValidation,
+  validate,
+  signup
+
+);
+
+router.post(
+  '/login',
+  loginValidation,
+  validate,
+  login
+);
 router.post('/signup', authRateLimiter, signup);
 router.post('/login', authRateLimiter, login);
 

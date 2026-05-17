@@ -228,8 +228,5 @@ export const promoteFromWaitlist = async (eventId) => {
         <p>Your registration for ${nextRegistration.event.title} is now confirmed.</p>
       `,
     });
-  } catch (err) {
-    console.error("ERROR:", err);
-    res.status(500).json({ message: err.message });
-  }
+  } catch (_) {}
 };
