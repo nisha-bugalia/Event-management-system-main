@@ -29,6 +29,12 @@ import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 
 import { initSocket } from './services/socket.js';
+import authRoutes from './routes/authRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import statsRoutes from './routes/statsRoutes.js';
+import registrationRoutes from './routes/registrationRoutes.js';  
 
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
@@ -115,11 +121,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Start server
 async function start() {
   await connectDB();
-
-  initSocket(server, env.clientUrl);
-
+  
   server.listen(env.port, () => {
     console.log(
       `Server running on http://localhost:${env.port}`

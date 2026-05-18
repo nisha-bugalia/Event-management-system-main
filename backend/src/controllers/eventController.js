@@ -120,6 +120,27 @@ export const deleteEvent = async (req, res) => {
 
 export const listEvents = async (req, res) => {
   try {
+<<<<<<< HEAD
+    const { q, category, status, organizer } = req.query;
+    const filter = {};
+    if (q) filter.title = { $regex: q, $options: 'i' };
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+    if (organizer) filter.organizer = organizer;
+    const events = await Event.find(filter).populate('organizer', 'name').sort({ date: 1 });
+
+    const eventsWithCount = await Promise.all(
+      events.map(async (event) => {
+        const registeredCount = await Registration.countDocuments({
+          event: event._id,
+          status: 'registered',
+        });
+        return { ...event.toObject(), registeredCount };
+      })
+    );
+
+    res.json({ events: eventsWithCount });
+=======
     const { q, category, status, organizer, tags } = req.query;
 
     const filter = {
@@ -167,6 +188,7 @@ export const listEvents = async (req, res) => {
 
     res.json({ events });
 
+>>>>>>> 5ea7ed8e455e42aeeefa33a5d759b561e34030ab
   } catch (err) {
     res.status(500).json({
       message: err.message,

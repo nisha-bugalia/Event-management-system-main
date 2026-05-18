@@ -14,6 +14,7 @@ import {
   Zap,
   Heart,
 } from "lucide-react";
+import { Button } from "../ui/button";
 
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -228,7 +229,8 @@ export default function FooterStandard() {
             ))}
           </div>
         </div>
-      </div>
+        </div>  {/* Close grid container from line 263 */}
+      </div>    {/* Close bottom section from line 238 */}
 
       {/* Legal Modal */}
       <LegalModal

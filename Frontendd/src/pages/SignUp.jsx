@@ -9,6 +9,10 @@ import { legalContent } from "../data/legalContent";
 
 import { API_BASE_URL } from "../config";
 
+// ── Reusable error message component ─────────────────────────────────────
+const ErrorMsg = ({ msg }) =>
+    msg ? <p className="text-red-500 text-xs mt-1">{msg}</p> : null;
+
 export default function SignUp() {
     const [isVisible, setIsVisible] = useState(false);
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
@@ -150,10 +154,6 @@ export default function SignUp() {
         setIsLoading(false);
     }
 };
-
-    // ── Reusable error message component ─────────────────────────────────────
-    const ErrorMsg = ({ msg }) =>
-        msg ? <p className="text-red-500 text-xs mt-1">{msg}</p> : null;
 
     return (
         <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
