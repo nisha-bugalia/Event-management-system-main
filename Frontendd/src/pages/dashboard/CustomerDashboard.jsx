@@ -18,6 +18,7 @@ export default function CustomerDashboard() {
     const [activeTab, setActiveTab] = useState('Upcoming Tickets');
     const [selectedTicket, setSelectedTicket] = useState(null);
     const ticketRef = useRef(null);
+    const mountedRef = useRef(true);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
@@ -25,18 +26,24 @@ export default function CustomerDashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedRegistrationId, setSelectedRegistrationId] = useState(null);
 
+    useEffect(() => {
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
     const fetchAvailableEvents = useCallback(async () => {
         const tags = searchParams.get('tags');
         try {
-            setLoading(true);
+            if (mountedRef.current) setLoading(true);
             let url = `${API_BASE_URL}/api/events?status=approved`;
 
             if (tags) {
                 url += `&tags=${tags}`;
             }
 
-    const res = await fetch(url);
-            if (res.ok) {
+            const res = await fetch(url);
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 // Filter events that are in the future
                 const upcoming = (data.events || []).filter(evt => new Date(evt.date) >= new Date());
@@ -45,25 +52,29 @@ export default function CustomerDashboard() {
         } catch (error) {
             console.error("Failed to fetch events", error);
         } finally {
-            setLoading(false);
+            if (mountedRef.current) {
+                setLoading(false);
+            }
         }
     }, [searchParams]);
 
     const fetchRegistrations = useCallback(async () => {
         try {
-            setLoading(true);
+            if (mountedRef.current) setLoading(true);
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_BASE_URL}/api/registrations/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 setRegistrations(data.registrations || []);
             }
         } catch (error) {
             console.error("Failed to fetch registrations", error);
         } finally {
-            setLoading(false);
+            if (mountedRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Calendar, MapPin, Building, Shield, Users, Activity, TrendingUp, Download, Trash2, MessageSquare, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -20,6 +20,13 @@ export default function AdminDashboard() {
     const [rejectingEvent, setRejectingEvent] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
     const [rejectLoading, setRejectLoading] = useState(false);
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
 
     const fetchPendingEvents = useCallback(async () => {
         try {
@@ -27,14 +34,16 @@ export default function AdminDashboard() {
             const res = await fetch(`${API_BASE_URL}/api/admin/events/pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 setPendingEvents(data.events || []);
             }
         } catch (error) {
             console.error("Failed to fetch pending events", error);
         } finally {
-            setLoading(false);
+            if (mountedRef.current) {
+                setLoading(false);
+            }
         }
     }, []);
 
@@ -42,7 +51,7 @@ export default function AdminDashboard() {
         try {
             // Fetch all events for management
             const res = await fetch(`${API_BASE_URL}/api/events`); // Helper endpoint that returns all without filter if no params
-            if (res.ok) {
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 setAllEvents(data.events || []);
             }
@@ -57,7 +66,7 @@ export default function AdminDashboard() {
             const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (res.ok) {
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 setAllUsers(data.users || []);
             }
@@ -69,7 +78,7 @@ export default function AdminDashboard() {
     const fetchStats = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE_URL}/api/stats/dashboard`);
-            if (res.ok) {
+            if (res.ok && mountedRef.current) {
                 const data = await res.json();
                 setStats(data);
             }
@@ -79,15 +88,27 @@ export default function AdminDashboard() {
     }, []);
 
     useEffect(() => {
-        if (activeTab === 'Pending Reviews') {
-            fetchPendingEvents();
-        } else if (activeTab === 'All Events & Management') {
-            fetchAllEvents();
-        } else if (activeTab === 'User Management') {
-            fetchUsers();
+        let mounted = true;
+
+        const loadData = async () => {
+            if (activeTab === 'Pending Reviews') {
+                await fetchPendingEvents();
+            } else if (activeTab === 'All Events & Management') {
+                await fetchAllEvents();
+            } else if (activeTab === 'User Management') {
+                await fetchUsers();
+            }
+            await fetchStats();
+        };
+
+        if (mounted) {
+            loadData();
         }
-        fetchStats();
-        }, [activeTab, fetchPendingEvents, fetchAllEvents, fetchUsers, fetchStats]);
+
+        return () => {
+            mounted = false;
+        };
+    }, [activeTab, fetchPendingEvents, fetchAllEvents, fetchUsers, fetchStats]);
 
     const handleAction = async (eventId, action, reason) => {
         try {
