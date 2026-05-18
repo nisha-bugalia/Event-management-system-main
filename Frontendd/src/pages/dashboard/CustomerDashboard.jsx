@@ -79,11 +79,13 @@ export default function CustomerDashboard() {
     }, []);
 
     useEffect(() => {
-        if (activeTab === 'Browse Events') {
-            fetchAvailableEvents();
-        } else {
-            fetchRegistrations();
-        }
+        (async () => {
+            if (activeTab === 'Browse Events') {
+                await fetchAvailableEvents();
+            } else {
+                await fetchRegistrations();
+            }
+        })();
     }, [activeTab, searchParams, fetchAvailableEvents, fetchRegistrations]);
 
     const handleRegister = async (eventId) => {

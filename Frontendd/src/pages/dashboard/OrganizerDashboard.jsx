@@ -98,7 +98,9 @@ export default function OrganizerDashboard() {
     useEffect(() => {
         document.title = 'Organizer Dashboard | Event.One';
         if (user) {
-            fetchMyEvents();
+            (async () => {
+                await fetchMyEvents();
+            })();
         }
     }, [user, fetchMyEvents]);
 
