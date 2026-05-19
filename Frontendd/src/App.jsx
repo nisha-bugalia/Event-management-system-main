@@ -23,10 +23,12 @@ import { useEffect, useState } from "react";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import Contact from "./pages/Contact";
+import Support from "./pages/Support";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import DashboardLayout from "./components/DashboardLayout";
 import Profile from "./pages/Profile";
@@ -119,6 +121,7 @@ const App = () => {
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/support" element={<Support />} />
             <Route path="/about-us" element={<About />} />
             <Route path="/login" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
@@ -193,6 +196,10 @@ const App = () => {
               }
             />
 
+            {/* Fallback to 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
             {/* Fallback Route */}
             <Route path="*" element={<Home />} />
           </Routes>
@@ -205,4 +212,4 @@ const App = () => {
   );
 };
 
-niexport default App;
+export default App;
