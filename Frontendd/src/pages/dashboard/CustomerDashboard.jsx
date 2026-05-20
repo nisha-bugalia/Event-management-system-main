@@ -42,7 +42,10 @@ const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get('category') || ''
 );
 const [isFetching, setIsFetching] = useState(false);  
-useEffect(() => () => (mountedRef.current = false), []);
+useEffect(() => {
+    mountedRef.current = true;
+    return () => (mountedRef.current = false);
+}, []);
 //  debounced value — API only fires 400ms after user stops typing 
 const debouncedSearch = useDebounce(searchQuery, 400);
 
