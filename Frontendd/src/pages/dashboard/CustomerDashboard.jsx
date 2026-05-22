@@ -4,8 +4,7 @@ import { Calendar, MapPin, Ticket, X, Download, Search } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/AuthContext';
-import toast from 'react-hot-toast';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import ConfirmationModal from '../../components/ui/confirmation-modal';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -25,8 +24,13 @@ export default function CustomerDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRegistrationId, setSelectedRegistrationId] = useState(null);
   const [highlightedEvents, setHighlightedEvents] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get('q') || ''
+  );
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => searchParams.get('category') || ''
+  );
   const [isFetching, setIsFetching] = useState(false);
 
   const ticketRef = useRef(null);
@@ -34,15 +38,15 @@ export default function CustomerDashboard() {
   const socketRef = useRef(null);
   const joinedEventIdsRef = useRef([]);
   const highlightTimeoutsRef = useRef({});
-
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const debouncedSearch = useDebounce(searchQuery, 400);
 
-  useEffect(() => {
-    setSearchQuery(searchParams.get('q') || '');
-    setSelectedCategory(searchParams.get('category') || '');
-  }, [searchParams]);
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'Browse Events') {
+      setSearchQuery(searchParams.get('q') || '');
+      setSelectedCategory(searchParams.get('category') || '');
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -136,12 +140,16 @@ export default function CustomerDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'Browse Events') {
-      fetchAvailableEvents();
-    } else {
-      fetchRegistrations();
-    }
-  }, [activeTab, fetchAvailableEvents, fetchRegistrations]);
+    const timer = setTimeout(() => {
+      if (activeTab === 'Browse Events') {
+        void fetchAvailableEvents();
+      } else {
+        void fetchRegistrations();
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [activeTab, searchParams, fetchAvailableEvents, fetchRegistrations]);
 
   useEffect(() => {
     if (activeTab !== 'Browse Events' || availableEvents.length === 0) {
@@ -247,7 +255,7 @@ export default function CustomerDashboard() {
       });
       highlightTimeoutsRef.current = {};
     };
-  }, [activeTab, availableEvents.map((evt) => evt?._id).filter(Boolean).join(',')]);
+  }, [activeTab, availableEvents]);
 
   const handleRegister = async (eventId) => {
     try {
@@ -407,7 +415,7 @@ export default function CustomerDashboard() {
             {['Upcoming Tickets', 'Past Events', 'Browse Events'].map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
                 className={`pb-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
                   activeTab === tab
                     ? 'text-orange-500'
