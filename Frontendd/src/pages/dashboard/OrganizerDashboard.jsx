@@ -1,14 +1,28 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import CountdownTimer from '../../components/CountdownTimer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Users, Plus, Upload, Tag, Search, TrendingUp, IndianRupee, Clock, CheckCircle, XCircle, AlertCircle, Download, Trash2 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import {
+    Calendar,
+    MapPin,
+    Users,
+    Plus,
+    Upload,
+    Tag,
+    Search,
+    IndianRupee,
+    AlertCircle,
+    Download,
+    CheckCircle,
+    Clock,
+    XCircle,
+    Trash2
+} from 'lucide-react';import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import toast from "react-hot-toast";
-
 
 import { API_BASE_URL } from '../../config';
 
@@ -456,9 +470,10 @@ const handleCreateSubmit = async (e) => {
                                                             )}
                                                             <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-muted-foreground">
                                                                 <span className="flex items-center">
-                                                                    <Calendar className="w-3 h-3 mr-1.5" />
+                                                                   <Calendar className="w-3 h-3 mr-1.5" />
                                                                     {new Date(event.date).toLocaleDateString()}
                                                                 </span>
+                                                                <CountdownTimer eventDate={event.date} />
                                                                 <span className="flex items-center">
                                                                     <MapPin className="w-3 h-3 mr-1.5" />
                                                                     {event.location}
@@ -501,17 +516,29 @@ const handleCreateSubmit = async (e) => {
                                                             </div>
                                                         )}
 
+                                                        
                                                         {/* Management Actions */}
-                                                        <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
+                                                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border/50">
+                                                            {event.status === 'approved' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                                                                    onClick={() => navigate(`/organizer/scan/${event._id}`)}
+                                                                >
+                                                                    Scan QR
+                                                                </Button>
+                                                            )}
+
                                                             {event.status === 'rejected' && (
                                                                 <Button
                                                                     size="sm"
-                                                                    className="mr-3 bg-red-600 text-white hover:bg-red-700"
+                                                                    className="bg-red-600 text-white hover:bg-red-700"
                                                                     onClick={() => handleEditResubmit(event)}
                                                                 >
                                                                     Edit & Resubmit
                                                                 </Button>
                                                             )}
+
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"
@@ -521,6 +548,7 @@ const handleCreateSubmit = async (e) => {
                                                                 Manage Event
                                                             </Button>
                                                         </div>
+
                                                     </div>
                                                 </div>
                                             </motion.div>
