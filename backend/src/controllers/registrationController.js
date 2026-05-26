@@ -9,8 +9,8 @@ import path from 'path';
 import { calculateRefund } from '../utils/refundPolicy.js';
 import { createObjectCsvWriter } from 'csv-writer';
 import { emitRegistrationCount } from '../services/socket.js';
+import { createNotification } from './notificationController.js';
 
-// Register for event
 export const registerForEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -21,26 +21,22 @@ export const registerForEvent = async (req, res) => {
       });
     }
 
-    // Check active registration count
     const activeRegistrations = await Registration.countDocuments({
       event: req.params.id,
       status: { $ne: 'cancelled' },
     });
 
-    // Capacity validation
     if (activeRegistrations >= event.capacity && event.capacity > 0) {
       return res.status(400).json({
         message: 'Event is fully booked',
       });
     }
 
-    // Check existing registration
     const existingRegistration = await Registration.findOne({
       user: req.user.id,
       event: req.params.id,
     });
 
-    // Already active
     if (
       existingRegistration &&
       ['registered', 'waitlisted', 'attended'].includes(
@@ -52,7 +48,6 @@ export const registerForEvent = async (req, res) => {
       });
     }
 
-    // Atomically increment count only if under capacity
     const updatedEvent = await Event.findOneAndUpdate(
       {
         _id: event._id,
@@ -71,7 +66,6 @@ export const registerForEvent = async (req, res) => {
       }
     );
 
-    // Event full
     if (!updatedEvent) {
       return res.status(400).json({
         message: 'Event is full',
@@ -88,7 +82,6 @@ export const registerForEvent = async (req, res) => {
 
     let registration;
 
-    // Reuse cancelled registration
     if (
       existingRegistration &&
       existingRegistration.status === 'cancelled'
@@ -107,14 +100,11 @@ export const registerForEvent = async (req, res) => {
         });
       } catch (dupErr) {
         if (dupErr.code === 11000) {
-          await Event.findByIdAndUpdate(
-            event._id,
-            {
-              $inc: {
-                registeredCount: -1,
-              },
-            }
-          );
+          await Event.findByIdAndUpdate(event._id, {
+            $inc: {
+              registeredCount: -1,
+            },
+          });
 
           return res.status(400).json({
             message: 'Already registered or waitlisted',
@@ -127,7 +117,7 @@ export const registerForEvent = async (req, res) => {
 
     emitRegistrationCount(
       updatedEvent._id,
-      updatedEvent.registeredCount,
+      updatedEvent.registeredCount
     );
 
     try {
@@ -137,6 +127,17 @@ export const registerForEvent = async (req, res) => {
         html: `<p>You are registered for ${event.title}.</p>`,
       });
     } catch (_) {}
+
+    try {
+      await createNotification(
+        req.user.id,
+        'registration_confirmed',
+        `Your registration for ${event.title} is confirmed`,
+        `/events/${event._id}`
+      );
+    } catch (notifErr) {
+      console.error('Failed to create notification:', notifErr);
+    }
 
     res.status(201).json({
       registration,
@@ -240,7 +241,9 @@ export const checkInParticipant = async (req, res) => {
       });
     }
 
-    const event = await Event.findById(req.params.id).select('organizer');
+    const event = await Event.findById(req.params.id).select(
+      'organizer'
+    );
 
     if (!event) {
       return res.status(404).json({
@@ -268,21 +271,25 @@ export const checkInParticipant = async (req, res) => {
       });
     }
 
-    if (status === 'attended' && registration.status === 'attended') {
+    if (
+      status === 'attended' &&
+      registration.status === 'attended'
+    ) {
       return res.status(400).json({
         message: 'Attendee already checked in',
       });
     }
 
     registration.status = status;
+
     if (status === 'attended') {
       registration.checkedInAt = new Date();
     } else {
       registration.checkedInAt = undefined;
     }
+
     await registration.save();
 
-    // Promote waitlisted user
     if (status === 'cancelled') {
       await promoteFromWaitlist(req.params.id);
     }
@@ -356,6 +363,7 @@ export const checkRegistrationStatus = async (req, res) => {
       isRegistered: registration?.status === 'registered',
       isWaitlisted: registration?.status === 'waitlisted',
       registration,
+      event: req.params.id,
     });
   } catch (err) {
     console.error('ERROR:', err);
@@ -401,6 +409,20 @@ export const promoteFromWaitlist = async (eventId) => {
       `,
     });
   } catch (_) {}
+
+  try {
+    await createNotification(
+      nextRegistration.user._id,
+      'waitlist_promoted',
+      `Good news! A spot opened up for ${nextRegistration.event.title}`,
+      `/events/${nextRegistration.event._id}`
+    );
+  } catch (notifErr) {
+    console.error(
+      'Failed to create waitlist notification:',
+      notifErr
+    );
+  }
 };
 
 // Cancel registration with refund handling
@@ -419,22 +441,20 @@ export const cancelRegistration = async (req, res) => {
       });
     }
 
-    // Owner check
     if (registration.user._id.toString() !== userId) {
       return res.status(403).json({
         message: 'Unauthorized',
       });
     }
 
-    // Already cancelled
     if (registration.status === 'cancelled') {
       return res.status(400).json({
         message: 'Already cancelled',
       });
     }
 
-    // Past event check
     const eventDate = new Date(registration.event.date);
+
     if (eventDate < new Date()) {
       return res.status(400).json({
         message: 'Cannot cancel past events',
@@ -446,12 +466,15 @@ export const cancelRegistration = async (req, res) => {
       refundAmount: 0,
     };
 
-    // Check if the event is paid or free
-    const isPaidEvent = registration.event.price && registration.event.price > 0;
+    const isPaidEvent =
+      registration.event.price &&
+      registration.event.price > 0;
 
     if (isPaidEvent) {
-      // Calculate eligible refund
-      const refundPolicy = calculateRefund(eventDate, registration.event.price);
+      const refundPolicy = calculateRefund(
+        eventDate,
+        registration.event.price
+      );
 
       refundData = {
         refundStatus: refundPolicy.status,
@@ -460,25 +483,10 @@ export const cancelRegistration = async (req, res) => {
 
       if (refundPolicy.eligible && registration.paymentId) {
         try {
-          // Call Razorpay Refund API with the stored paymentId
-          console.log('Refund API call...');
-          // TODO: Add after #76 merges
-          // Razorpay refund integration
-          /*
-          const refund = await razorpay.payments.refund(
-            registration.paymentId,
-            { amount: refundPolicy.refundAmount * 100 }
-          );
-          refundData.refundId = refund.id;
-          refundData.refundStatus = refund.status;
-          */
-
-          // Mock temporary response
           refundData.refundId = 'mock_refund_id';
           refundData.refundStatus = 'pending';
           refundData.refundedAt = new Date();
 
-          // Send a refund confirmation email to the customer
           try {
             await sendEmail({
               to: req.user.email,
@@ -488,6 +496,7 @@ export const cancelRegistration = async (req, res) => {
           } catch (_) {}
         } catch (refundError) {
           console.error(refundError);
+
           return res.status(500).json({
             message: 'Refund processing failed',
             error: refundError.message,
@@ -496,21 +505,22 @@ export const cancelRegistration = async (req, res) => {
       }
     }
 
-    // Save refund details to the Registration document
     registration.refundId = refundData.refundId || null;
     registration.refundStatus = refundData.refundStatus;
     registration.refundAmount = refundData.refundAmount;
     registration.refundedAt = refundData.refundedAt || null;
 
     registration.status = 'cancelled';
+
     await registration.save();
 
-    // Decrease registered count
-    await Event.findByIdAndUpdate(registration.event._id, {
-      $inc: { registeredCount: -1 },
-    });
+    await Event.findByIdAndUpdate(
+      registration.event._id,
+      {
+        $inc: { registeredCount: -1 },
+      }
+    );
 
-    // Promote next waitlisted user
     await promoteFromWaitlist(registration.event._id);
 
     res.status(200).json({
@@ -519,7 +529,10 @@ export const cancelRegistration = async (req, res) => {
     });
   } catch (error) {
     console.error('ERROR:', error);
-    res.status(500).json({ message: error.message });
+
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 
@@ -529,30 +542,27 @@ export const checkRefundStatus = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const registration = await Registration.findById(id);
+    const registration = await Registration.findById(id)
+      .populate('event');
 
-    // Registration exists check
     if (!registration) {
       return res.status(404).json({
         message: 'Registration not found',
       });
     }
 
-    // Owner check
     if (registration.user.toString() !== userId) {
       return res.status(403).json({
         message: 'Unauthorized',
       });
     }
 
-    // Refund only applies to cancelled registrations
     if (registration.status !== 'cancelled') {
       return res.status(400).json({
         message: 'Registration is not cancelled',
       });
     }
 
-    // Free event / no payment
     if (!registration.paymentId) {
       return res.status(200).json({
         refundStatus: 'not_applicable',
@@ -591,22 +601,20 @@ export const checkRefundPolicy = async (req, res) => {
       });
     }
 
-    // Owner check
     if (registration.user._id.toString() !== userId) {
       return res.status(403).json({
         message: 'Unauthorized',
       });
     }
 
-    // Already cancelled
     if (registration.status === 'cancelled') {
       return res.status(400).json({
         message: 'Already cancelled',
       });
     }
 
-    // Past event check
     const eventDate = new Date(registration.event.date);
+
     if (eventDate < new Date()) {
       return res.status(400).json({
         message: 'Cannot cancel past events',
@@ -618,11 +626,16 @@ export const checkRefundPolicy = async (req, res) => {
       refundAmount: 0,
     };
 
-    // Check if the event is paid or free
-    const isPaidEvent = registration.event.price && registration.event.price > 0;
+    const isPaidEvent =
+      registration.event.price &&
+      registration.event.price > 0;
 
     if (isPaidEvent) {
-      const refundPolicy = calculateRefund(eventDate, registration.event.price);
+      const refundPolicy = calculateRefund(
+        eventDate,
+        registration.event.price
+      );
+
       refundData = {
         refundStatus: refundPolicy.status,
         refundAmount: refundPolicy.refundAmount,
@@ -633,6 +646,8 @@ export const checkRefundPolicy = async (req, res) => {
       refundData,
     });
   } catch (error) {
+    console.error('ERROR:', error);
+
     res.status(500).json({
       message: error.message,
     });
